@@ -1,0 +1,8 @@
+{
+    "deno": {
+        "options": [
+            "--allow-all",
+            "--unstable"
+        ]
+    }
+}
