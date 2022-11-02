@@ -1,5 +1,5 @@
 
-type RequestPredicate = (request: Deno.RequestEvent['request']) => Boolean;
+type RequestPredicate = (request: Deno.RequestEvent['request']) => Promise<boolean> | boolean;
 type RequestCallback = (request: Deno.RequestEvent) => void;
 
 class Router {
@@ -19,10 +19,12 @@ class Router {
     post(predicate: RequestPredicate, callback: RequestCallback) {
         this.registerByMethod('POST', predicate, callback);
     }
-    handle(req: Deno.RequestEvent) {
-        console.log(this.REGISTRY)
+    async handle(req: Deno.RequestEvent) {
         for (const [predicate, callback] of this.REGISTRY.entries()) {
-            if(predicate(req.request)) return callback(req);
+            if(predicate.constructor.name === 'AsyncFunction' ? await predicate(req.request) : predicate(req.request)) return callback(req);
+            req.respondWith(new Response(null, {
+                status: 404
+            }));
         }
     }
 }
