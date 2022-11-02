@@ -5,17 +5,16 @@ class Router {
     private GETREGEX: Map<RegExp, (req: Deno.RequestEvent) => void> = new Map;
     private POST: Map<pathname, (req: Deno.RequestEvent) => void> = new Map;
     private POSTREGEX: Map<RegExp, (req: Deno.RequestEvent) => void> = new Map;
-    get(pathname: pathname, req: (req: Deno.RequestEvent) => void) {
-        if(pathname instanceof RegExp) return this.GETREGEX.set(pathname, req);
-        if(typeof pathname === 'string') return this.GET.set(pathname, req);
+    get(pathname: pathname, req: (req: Deno.RequestEvent) => void): void {
+        if(pathname instanceof RegExp) this.GETREGEX.set(pathname, req);
+        if(typeof pathname === 'string') this.GET.set(pathname, req);
     }
-    post(pathname: pathname, req: (req: Deno.RequestEvent) => void) {
-        if(pathname instanceof RegExp) return this.POSTREGEX.set(pathname, req);
-        if(typeof pathname === 'string') return this.POST.set(pathname, req);
+    post(pathname: pathname, req: (req: Deno.RequestEvent) => void): void {
+        if(pathname instanceof RegExp) this.POSTREGEX.set(pathname, req);
+        if(typeof pathname === 'string') this.POST.set(pathname, req);
     }
     handle(req: Deno.RequestEvent) {
         const url = new URL(req.request.url);
-        
         if(req.request.method === 'GET') {
             for(const key of this.GET.keys())
                 if(url.pathname === key) return this.GET.get(key)!(req);
@@ -55,9 +54,10 @@ export class Server {
         });
     }
     async listen() {
-        for await (const conn of this.TcpListener)
-            for await (const request of Deno.serveHttp(conn))
-                this.handle(request);
+        for await (const conn of this.TcpListener) this.upgrade(conn);
+    }
+    async upgrade(conn: Deno.Conn) {
+        for await (const request of Deno.serveHttp(conn)) this.handle(request);
     }
     handle(req: Deno.RequestEvent) {
         return this.router.handle(req);
