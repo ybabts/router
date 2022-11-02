@@ -21,7 +21,8 @@ class Router {
     }
     async handle(req: Deno.RequestEvent) {
         for (const [predicate, callback] of this.REGISTRY.entries()) {
-            if(predicate.constructor.name === 'AsyncFunction' ? await predicate(req.request) : predicate(req.request)) return callback(req);
+            const res = predicate(req.request);
+            if(res instanceof Promise ? await res : res) return callback(req);
         }
         req.respondWith(new Response(null, {
             status: 404
